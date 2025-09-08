@@ -3,6 +3,7 @@ import { Link, useLocation } from "react-router-dom";
 import { OfflineBadge } from "./OfflineBadge";
 import { InstallButton } from "./InstallButton";
 import { UpdateToast } from "./UpdateToast";
+import { SyncButton } from "./SyncButton";
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -47,6 +48,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
               </nav>
             </div>
             <div className="flex items-center space-x-3">
+              <SyncButton />
               <OfflineBadge />
               <InstallButton />
             </div>

@@ -3,13 +3,15 @@ import { enqueueMutation, getSyncQueue, removeSyncQueueItem } from "./db";
 import * as api from "./api";
 
 export const enqueueCreateTodo = async (
-  todo: Omit<Todo, "id" | "createdAt" | "updatedAt">
+  todo: Omit<Todo, "id" | "createdAt" | "updatedAt">,
+  localId?: string
 ): Promise<void> => {
   const item: SyncQueueItem = {
     id: Math.random().toString(36).substr(2, 9),
     type: "create",
     payload: todo as Todo,
     timestamp: new Date().toISOString(),
+    localId,
   };
   await enqueueMutation(item);
 };
@@ -49,22 +51,30 @@ export const flushQueue = async (): Promise<void> => {
   console.log(`[Sync] Flushing ${queue.length} items from queue`);
 
   const successfulItems: string[] = [];
+  const syncedTodos: Todo[] = [];
 
   for (const item of queue) {
     try {
+      let syncedTodo: Todo | null = null;
+
       switch (item.type) {
         case "create":
-          await api.createTodo(
+          syncedTodo = await api.createTodo(
             item.payload as Omit<Todo, "id" | "createdAt" | "updatedAt">
           );
           break;
         case "update":
-          await api.updateTodo(item.payload as Todo);
+          syncedTodo = await api.updateTodo(item.payload as Todo);
           break;
         case "delete":
           await api.deleteTodo((item.payload as { id: string }).id);
           break;
       }
+
+      if (syncedTodo) {
+        syncedTodos.push(syncedTodo);
+      }
+
       successfulItems.push(item.id);
       console.log(
         `[Sync] Successfully synced ${item.type} operation for item ${item.id}`
@@ -78,6 +88,41 @@ export const flushQueue = async (): Promise<void> => {
     }
   }
 
+  // Update local IndexedDB with synced data
+  if (syncedTodos.length > 0) {
+    const { updateTodo, deleteTodo } = await import("./db");
+
+    // Update each synced todo in local IndexedDB
+    for (let i = 0; i < syncedTodos.length; i++) {
+      const syncedTodo = syncedTodos[i];
+      const originalItem = queue.find((item) =>
+        successfulItems.includes(item.id)
+      );
+
+      if (
+        originalItem &&
+        originalItem.type === "create" &&
+        originalItem.localId
+      ) {
+        // For created todos, we need to replace the local todo with the server version
+        if (originalItem.localId !== syncedTodo.id) {
+          // Delete the local todo with the old ID
+          await deleteTodo(originalItem.localId);
+          console.log(
+            `[Sync] Deleted local todo with ID ${originalItem.localId}`
+          );
+        }
+      }
+
+      // Add/update with the server version
+      await updateTodo(syncedTodo);
+    }
+
+    console.log(
+      `[Sync] Updated local IndexedDB with ${syncedTodos.length} synced todos`
+    );
+  }
+
   // Remove successfully synced items from queue
   for (const itemId of successfulItems) {
     await removeSyncQueueItem(itemId);
@@ -85,6 +130,13 @@ export const flushQueue = async (): Promise<void> => {
 
   console.log(
     `[Sync] Queue flush completed. ${successfulItems.length}/${queue.length} items synced`
+  );
+
+  // Notify that sync is complete
+  window.dispatchEvent(
+    new CustomEvent("sync-complete", {
+      detail: { syncedCount: successfulItems.length, totalCount: queue.length },
+    })
   );
 };
 
@@ -121,4 +173,10 @@ export const requestBackgroundSync = async (): Promise<void> => {
       "[Sync] Background sync not supported, using online event fallback"
     );
   }
+};
+
+// Manual sync trigger - can be called when user comes back online
+export const triggerSync = async (): Promise<void> => {
+  console.log("[Sync] Manual sync triggered");
+  await flushQueue();
 };

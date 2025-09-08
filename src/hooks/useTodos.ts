@@ -61,8 +61,8 @@ export const useTodos = () => {
       await addTodo(newTodo);
       setTodos((prev) => [...prev, newTodo]);
 
-      // Enqueue for sync
-      await enqueueCreateTodo(newTodo);
+      // Enqueue for sync with local ID
+      await enqueueCreateTodo(newTodo, newTodo.id);
 
       // Try to sync immediately if online
       if (navigator.onLine) {
@@ -153,6 +153,20 @@ export const useTodos = () => {
 
   useEffect(() => {
     loadTodos();
+  }, [loadTodos]);
+
+  // Listen for sync completion and refresh todos
+  useEffect(() => {
+    const handleSyncComplete = () => {
+      console.log("[Todos] Sync completed, refreshing todos");
+      loadTodos();
+    };
+
+    window.addEventListener("sync-complete", handleSyncComplete);
+
+    return () => {
+      window.removeEventListener("sync-complete", handleSyncComplete);
+    };
   }, [loadTodos]);
 
   return {

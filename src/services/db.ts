@@ -13,6 +13,7 @@ export interface SyncQueueItem {
   type: "create" | "update" | "delete";
   payload: Todo | { id: string };
   timestamp: string;
+  localId?: string; // For tracking local ID when syncing creates
 }
 
 interface TodoDB extends DBSchema {

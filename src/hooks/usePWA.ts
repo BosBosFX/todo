@@ -8,6 +8,7 @@ import {
   showInstallPrompt,
   setupBackgroundSync,
 } from "../services/pwa";
+import { attachOnlineListener } from "../services/sync";
 
 export const usePWA = () => {
   const [isUpdateAvailable, setIsUpdateAvailable] = useState(false);
@@ -21,6 +22,10 @@ export const usePWA = () => {
     // Setup background sync and get cleanup function
     console.log("[PWA] Setting up background sync");
     const cleanupBackgroundSync = setupBackgroundSync();
+
+    // Setup online listener for sync
+    console.log("[PWA] Setting up online listener for sync");
+    const cleanupOnlineListener = attachOnlineListener();
 
     // Handle install prompt
     const handleBeforeInstallPrompt = (e: any) => {
@@ -48,6 +53,7 @@ export const usePWA = () => {
       );
       clearInterval(interval);
       cleanupBackgroundSync();
+      cleanupOnlineListener();
     };
   }, []);
 
