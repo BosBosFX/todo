@@ -4,6 +4,7 @@ import {
   getSWStatus,
   getStorageEstimate,
   checkIndexedDBHealth,
+  checkForUpdates,
 } from "../services/pwa";
 
 export const PWATestPanel: React.FC = () => {
@@ -42,12 +43,16 @@ export const PWATestPanel: React.FC = () => {
   }, []);
 
   const handleForceUpdate = async () => {
-    if ("serviceWorker" in navigator) {
-      const registration = await navigator.serviceWorker.getRegistration();
-      if (registration) {
-        await registration.update();
-        console.log("Forced service worker update check");
+    console.log("🔄 Forcing update check...");
+    try {
+      const hasUpdate = await checkForUpdates();
+      if (hasUpdate) {
+        console.log("✅ Update found!");
+      } else {
+        console.log("ℹ️ No updates available");
       }
+    } catch (error) {
+      console.error("❌ Error checking for updates:", error);
     }
   };
 

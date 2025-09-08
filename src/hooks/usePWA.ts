@@ -9,6 +9,7 @@ import {
   setupBackgroundSync,
   checkIndexedDBHealth,
   getStorageEstimate,
+  checkForUpdates,
 } from "../services/pwa";
 import { attachOnlineListener } from "../services/sync";
 
@@ -61,21 +62,54 @@ export const usePWA = () => {
 
     window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
 
+    // Listen for custom update events
+    const handleUpdateAvailable = () => {
+      console.log("[PWA] Update available event received");
+      setIsUpdateAvailable(true);
+    };
+
     // Check for updates periodically
-    const checkForUpdates = () => {
+    const checkForUpdatesPeriodically = async () => {
       if (checkUpdateAvailable()) {
         setIsUpdateAvailable(true);
         setUpdateAvailable(false);
+      } else {
+        // Also manually check for updates
+        await checkForUpdates();
+        if (checkUpdateAvailable()) {
+          setIsUpdateAvailable(true);
+          setUpdateAvailable(false);
+        }
       }
     };
 
-    const interval = setInterval(checkForUpdates, 1000);
+    // Listen for custom events
+    window.addEventListener("pwa-update-available", handleUpdateAvailable);
+
+    // Check for updates when app becomes visible (user switches back to tab)
+    const handleVisibilityChange = async () => {
+      if (!document.hidden) {
+        console.log("[PWA] App became visible, checking for updates...");
+        await checkForUpdates();
+        if (checkUpdateAvailable()) {
+          setIsUpdateAvailable(true);
+          setUpdateAvailable(false);
+        }
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    // Check for updates every 5 seconds (less frequent but more thorough)
+    const interval = setInterval(checkForUpdatesPeriodically, 5000);
 
     return () => {
       window.removeEventListener(
         "beforeinstallprompt",
         handleBeforeInstallPrompt
       );
+      window.removeEventListener("pwa-update-available", handleUpdateAvailable);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
       clearInterval(interval);
       cleanupBackgroundSync();
       cleanupOnlineListener();

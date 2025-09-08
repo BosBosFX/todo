@@ -14,9 +14,9 @@ function App() {
 
           {/* PWA Test Elements - Remove after testing */}
           <div className="fixed top-4 left-4 bg-green-500 text-white p-3 rounded-lg shadow-lg z-50 max-w-xs">
-            <div className="font-bold text-sm">🚀 PWA TEST v2.1</div>
+            <div className="font-bold text-sm">🚀 PWA TEST v2.2</div>
             <div className="text-xs opacity-90 mt-1">
-              Enhanced caching + IndexedDB protection
+              Enhanced update detection + Auto-check
             </div>
             <div className="text-xs opacity-75 mt-1">
               {new Date().toLocaleTimeString()}

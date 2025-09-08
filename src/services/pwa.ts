@@ -16,30 +16,57 @@ export const registerSW = async (): Promise<void> => {
       if (registration) {
         console.log("[PWA] Service worker already registered");
         workbox = new Workbox("/sw.js");
+
+        // Set up event listeners
         workbox.addEventListener("waiting", () => {
           updateAvailable = true;
-          console.log("[PWA] Update available");
+          console.log("[PWA] Update available - waiting for user action");
+          // Dispatch custom event for components to listen
+          window.dispatchEvent(new CustomEvent("pwa-update-available"));
         });
+
         workbox.addEventListener("controlling", () => {
+          console.log("[PWA] Service worker controlling");
           window.location.reload();
         });
+
+        workbox.addEventListener("activated", () => {
+          console.log("[PWA] Service worker activated");
+        });
+
+        // Check for updates immediately
+        await workbox.update();
+
         isRegistering = false;
         return;
       }
 
       workbox = new Workbox("/sw.js");
 
+      // Set up event listeners
       workbox.addEventListener("waiting", () => {
         updateAvailable = true;
-        console.log("[PWA] Update available");
+        console.log("[PWA] Update available - waiting for user action");
+        // Dispatch custom event for components to listen
+        window.dispatchEvent(new CustomEvent("pwa-update-available"));
       });
 
       workbox.addEventListener("controlling", () => {
+        console.log("[PWA] Service worker controlling");
         window.location.reload();
+      });
+
+      workbox.addEventListener("activated", () => {
+        console.log("[PWA] Service worker activated");
       });
 
       await workbox.register();
       console.log("[PWA] Service worker registered");
+
+      // Check for updates after registration
+      setTimeout(() => {
+        workbox?.update();
+      }, 1000);
     } catch (error) {
       console.error("[PWA] Service worker registration failed:", error);
       workbox = null;
@@ -53,6 +80,20 @@ export const updateSW = async (): Promise<void> => {
   if (workbox) {
     await workbox.update();
   }
+};
+
+export const checkForUpdates = async (): Promise<boolean> => {
+  if (workbox) {
+    try {
+      console.log("[PWA] Manually checking for updates...");
+      await workbox.update();
+      return updateAvailable;
+    } catch (error) {
+      console.error("[PWA] Error checking for updates:", error);
+      return false;
+    }
+  }
+  return false;
 };
 
 export const getSWStatus = async (): Promise<string> => {
