@@ -15,9 +15,11 @@ export const usePWA = () => {
 
   useEffect(() => {
     // Register service worker
+    console.log("[PWA] Registering service worker");
     registerSW();
 
     // Setup background sync and get cleanup function
+    console.log("[PWA] Setting up background sync");
     const cleanupBackgroundSync = setupBackgroundSync();
 
     // Handle install prompt
