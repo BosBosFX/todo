@@ -4,22 +4,7 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 // In-memory database simulation
 class MockDatabase {
-  private todos: Todo[] = [
-    {
-      id: "1",
-      title: "Welcome to your Todo PWA!",
-      completed: false,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    },
-    {
-      id: "2",
-      title: "This works offline too!",
-      completed: true,
-      createdAt: new Date(Date.now() - 86400000).toISOString(),
-      updatedAt: new Date(Date.now() - 86400000).toISOString(),
-    },
-  ];
+  private todos: Todo[] = [];
 
   async getAllTodos(): Promise<Todo[]> {
     console.log(`[MockDB] Fetching ${this.todos.length} todos`);
@@ -42,6 +27,7 @@ class MockDatabase {
   }
 
   async updateTodo(todo: Todo): Promise<Todo> {
+    console.log(`[MockDB] Current todos:`, this.todos);
     const index = this.todos.findIndex((t) => t.id === todo.id);
     if (index === -1) {
       throw new Error(`Todo with id ${todo.id} not found`);
@@ -74,22 +60,7 @@ class MockDatabase {
 
   // Utility method to reset database
   reset(): void {
-    this.todos = [
-      {
-        id: "1",
-        title: "Welcome to your Todo PWA!",
-        completed: false,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      },
-      {
-        id: "2",
-        title: "This works offline too!",
-        completed: true,
-        createdAt: new Date(Date.now() - 86400000).toISOString(),
-        updatedAt: new Date(Date.now() - 86400000).toISOString(),
-      },
-    ];
+    this.todos = [];
     console.log("[MockDB] Database reset to initial state");
   }
 }

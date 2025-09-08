@@ -57,25 +57,36 @@ export const useTodos = () => {
         updatedAt: new Date().toISOString(),
       };
 
-      // Add to local storage immediately (optimistic update)
-      await addTodo(newTodo);
-      setTodos((prev) => [...prev, newTodo]);
-
-      // Enqueue for sync with local ID
-      await enqueueCreateTodo(newTodo, newTodo.id);
-
       // Try to sync immediately if online
       if (navigator.onLine) {
         try {
-          await api.createTodo(newTodo);
-          console.log("[Todos] Todo created and synced to API");
+          await api.createTodo(newTodo).then((createdTodo) => {
+            // Add to local storage immediately (optimistic update)
+            addTodo(createdTodo);
+            setTodos((prev) => [...prev, createdTodo]);
+            console.log("[Todos] Todo created and synced to API");
+          });
         } catch (syncError) {
-          console.log("[Todos] Todo created locally, will sync when online");
-          await requestBackgroundSync();
+          // Enqueue for sync with local ID
+          await enqueueCreateTodo(newTodo, newTodo.id).then(() => {
+            // Add to local storage immediately (optimistic update)
+            addTodo(newTodo);
+            setTodos((prev) => [...prev, newTodo]);
+
+            console.log("[Todos] Todo created locally, will sync when online");
+            requestBackgroundSync();
+          });
         }
       } else {
-        console.log("[Todos] Todo created locally, will sync when online");
-        await requestBackgroundSync();
+        // Enqueue for sync with local ID
+        await enqueueCreateTodo(newTodo, newTodo.id).then(() => {
+          // Add to local storage immediately (optimistic update)
+          addTodo(newTodo);
+          setTodos((prev) => [...prev, newTodo]);
+
+          console.log("[Todos] Todo created locally, will sync when online");
+          requestBackgroundSync();
+        });
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to create todo");
@@ -99,19 +110,22 @@ export const useTodos = () => {
         await updateTodo(updatedTodo);
         setTodos((prev) => prev.map((t) => (t.id === id ? updatedTodo : t)));
 
-        // Enqueue for sync
-        await enqueueUpdateTodo(updatedTodo);
-
         // Try to sync immediately if online
         if (navigator.onLine) {
           try {
             await api.updateTodo(updatedTodo);
             console.log("[Todos] Todo updated and synced to API");
           } catch (syncError) {
+            // Enqueue for sync
+            await enqueueUpdateTodo(updatedTodo);
+
             console.log("[Todos] Todo updated locally, will sync when online");
             await requestBackgroundSync();
           }
         } else {
+          // Enqueue for sync
+          await enqueueUpdateTodo(updatedTodo);
+
           console.log("[Todos] Todo updated locally, will sync when online");
           await requestBackgroundSync();
         }
@@ -129,19 +143,22 @@ export const useTodos = () => {
       await deleteTodo(id);
       setTodos((prev) => prev.filter((t) => t.id !== id));
 
-      // Enqueue for sync
-      await enqueueDeleteTodo(id);
-
       // Try to sync immediately if online
       if (navigator.onLine) {
         try {
           await api.deleteTodo(id);
           console.log("[Todos] Todo deleted and synced to API");
         } catch (syncError) {
+          // Enqueue for sync
+          await enqueueDeleteTodo(id);
+
           console.log("[Todos] Todo deleted locally, will sync when online");
           await requestBackgroundSync();
         }
       } else {
+        // Enqueue for sync
+        await enqueueDeleteTodo(id);
+
         console.log("[Todos] Todo deleted locally, will sync when online");
         await requestBackgroundSync();
       }

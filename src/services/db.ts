@@ -75,6 +75,9 @@ export const deleteTodo = async (id: string): Promise<void> => {
 
 export const bulkPutTodos = async (todos: Todo[]): Promise<void> => {
   const database = await initDB();
+
+  await database.clear("todos");
+
   const tx = database.transaction("todos", "readwrite");
   await Promise.all(todos.map((todo) => tx.store.put(todo)));
   await tx.done;
