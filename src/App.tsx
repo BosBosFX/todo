@@ -10,6 +10,10 @@ function App() {
       <PWAProvider>
         <Layout>
           <AppRoutes />
+          {/* Add this line to test */}
+          <div className="fixed top-4 left-4 bg-green-500 text-white p-2 rounded">
+            VERSION 2.0 - UPDATE TEST
+          </div>
         </Layout>
       </PWAProvider>
     </BrowserRouter>
