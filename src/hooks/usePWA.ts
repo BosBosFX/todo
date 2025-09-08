@@ -7,12 +7,37 @@ import {
   setInstallPrompt,
   showInstallPrompt,
   setupBackgroundSync,
+  checkIndexedDBHealth,
+  getStorageEstimate,
 } from "../services/pwa";
 import { attachOnlineListener } from "../services/sync";
 
 export const usePWA = () => {
   const [isUpdateAvailable, setIsUpdateAvailable] = useState(false);
   const [canInstall, setCanInstall] = useState(false);
+
+  useEffect(() => {
+    const initializeStorage = async () => {
+      // Check storage health
+      const isHealthy = await checkIndexedDBHealth();
+      if (!isHealthy) {
+        console.error("IndexedDB is not functioning properly");
+      }
+
+      // Monitor storage usage
+      const estimate = await getStorageEstimate();
+      if (
+        estimate &&
+        estimate.usage &&
+        estimate.quota &&
+        estimate.usage > estimate.quota * 0.8
+      ) {
+        console.error("Storage is almost full");
+      }
+    };
+
+    initializeStorage();
+  }, []);
 
   useEffect(() => {
     // Register service worker

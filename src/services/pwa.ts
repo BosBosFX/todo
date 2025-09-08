@@ -90,7 +90,6 @@ export const setUpdateAvailable = (available: boolean): void => {
   updateAvailable = available;
 };
 
-// Install prompt handling
 export const setInstallPrompt = (prompt: any): void => {
   installPrompt = prompt;
 };
@@ -138,4 +137,51 @@ export const setupBackgroundSync = (): (() => void) => {
   }
 
   return () => {}; // Return empty cleanup function if already set up
+};
+
+export const getStorageEstimate = async (): Promise<StorageEstimate | null> => {
+  if ("storage" in navigator && "estimate" in navigator.storage) {
+    try {
+      const estimate = await navigator.storage.estimate();
+      console.log("Storage estimate:", {
+        quota: estimate.quota ?? 0,
+        usage: estimate.usage ?? 0,
+        available: (estimate.quota ?? 0) - (estimate.usage ?? 0),
+      });
+      return estimate;
+    } catch (error) {
+      console.error("Error getting storage estimate:", error);
+      return null as unknown as StorageEstimate;
+    }
+  }
+  return null;
+};
+
+export const checkIndexedDBHealth = async (): Promise<boolean> => {
+  try {
+    // Test IndexedDB connection
+    const testDB = indexedDB.open("health-check", 1);
+
+    return new Promise((resolve, _reject) => {
+      testDB.onerror = () => {
+        console.error("IndexedDB health check failed");
+        resolve(false);
+      };
+
+      testDB.onsuccess = () => {
+        console.log("IndexedDB health check passed");
+        testDB.result.close();
+        indexedDB.deleteDatabase("health-check");
+        resolve(true);
+      };
+
+      testDB.onupgradeneeded = (event) => {
+        const db = (event.target as IDBOpenDBRequest).result;
+        db.createObjectStore("test");
+      };
+    });
+  } catch (error) {
+    console.error("IndexedDB health check error:", error);
+    return false;
+  }
 };
