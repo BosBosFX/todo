@@ -14,7 +14,7 @@ function App() {
 
           {/* PWA Test Elements - Remove after testing */}
           <div className="fixed top-4 left-4 bg-green-500 text-white p-3 rounded-lg shadow-lg z-50 max-w-xs">
-            <div className="font-bold text-sm">🚀 PWA TEST v2.5</div>
+            <div className="font-bold text-sm">🚀 PWA TEST v2.6</div>
             <div className="text-xs opacity-90 mt-1">
               Enhanced update detection + Auto-check
             </div>
