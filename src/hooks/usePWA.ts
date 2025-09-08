@@ -10,6 +10,7 @@ import {
   checkIndexedDBHealth,
   getStorageEstimate,
   checkForUpdates,
+  checkForUpdatesNative,
 } from "../services/pwa";
 import { attachOnlineListener } from "../services/sync";
 
@@ -74,8 +75,9 @@ export const usePWA = () => {
         setIsUpdateAvailable(true);
         setUpdateAvailable(false);
       } else {
-        // Also manually check for updates
+        // Also manually check for updates using both methods
         await checkForUpdates();
+        await checkForUpdatesNative();
         if (checkUpdateAvailable()) {
           setIsUpdateAvailable(true);
           setUpdateAvailable(false);
@@ -90,7 +92,9 @@ export const usePWA = () => {
     const handleVisibilityChange = async () => {
       if (!document.hidden) {
         console.log("[PWA] App became visible, checking for updates...");
+        // Try both methods
         await checkForUpdates();
+        await checkForUpdatesNative();
         if (checkUpdateAvailable()) {
           setIsUpdateAvailable(true);
           setUpdateAvailable(false);

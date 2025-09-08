@@ -5,6 +5,7 @@ import {
   getStorageEstimate,
   checkIndexedDBHealth,
   checkForUpdates,
+  checkForUpdatesNative,
 } from "../services/pwa";
 
 export const PWATestPanel: React.FC = () => {
@@ -45,8 +46,14 @@ export const PWATestPanel: React.FC = () => {
   const handleForceUpdate = async () => {
     console.log("🔄 Forcing update check...");
     try {
-      const hasUpdate = await checkForUpdates();
-      if (hasUpdate) {
+      // Try both methods
+      console.log("Trying Workbox method...");
+      const hasUpdateWorkbox = await checkForUpdates();
+
+      console.log("Trying native method...");
+      const hasUpdateNative = await checkForUpdatesNative();
+
+      if (hasUpdateWorkbox || hasUpdateNative) {
         console.log("✅ Update found!");
       } else {
         console.log("ℹ️ No updates available");
@@ -113,6 +120,26 @@ export const PWATestPanel: React.FC = () => {
             className="w-full bg-blue-500 hover:bg-blue-600 px-2 py-1 rounded text-xs"
           >
             🔄 Force Update Check
+          </button>
+
+          <button
+            onClick={async () => {
+              console.log("🔍 Debug Service Worker State:");
+              const registration =
+                await navigator.serviceWorker.getRegistration();
+              if (registration) {
+                console.log("Registration:", registration);
+                console.log("Active:", registration.active);
+                console.log("Installing:", registration.installing);
+                console.log("Waiting:", registration.waiting);
+                console.log("Scope:", registration.scope);
+              } else {
+                console.log("No registration found");
+              }
+            }}
+            className="w-full bg-gray-500 hover:bg-gray-600 px-2 py-1 rounded text-xs"
+          >
+            🔍 Debug SW State
           </button>
 
           {isUpdateAvailable && (

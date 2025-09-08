@@ -86,14 +86,87 @@ export const checkForUpdates = async (): Promise<boolean> => {
   if (workbox) {
     try {
       console.log("[PWA] Manually checking for updates...");
+
+      // Get current registration
+      const registration = await navigator.serviceWorker.getRegistration();
+      if (!registration) {
+        console.log("[PWA] No service worker registration found");
+        return false;
+      }
+
+      // Check if there's already a waiting service worker
+      if (registration.waiting) {
+        console.log("[PWA] Found waiting service worker");
+        updateAvailable = true;
+        window.dispatchEvent(new CustomEvent("pwa-update-available"));
+        return true;
+      }
+
+      // Force update check
       await workbox.update();
-      return updateAvailable;
+
+      // Also try direct registration update
+      await registration.update();
+
+      // Check again after update
+      const newRegistration = await navigator.serviceWorker.getRegistration();
+      if (newRegistration && newRegistration.waiting) {
+        console.log("[PWA] Update found after manual check");
+        updateAvailable = true;
+        window.dispatchEvent(new CustomEvent("pwa-update-available"));
+        return true;
+      }
+
+      console.log("[PWA] No updates available");
+      return false;
     } catch (error) {
       console.error("[PWA] Error checking for updates:", error);
       return false;
     }
   }
   return false;
+};
+
+export const checkForUpdatesNative = async (): Promise<boolean> => {
+  if (!("serviceWorker" in navigator)) {
+    return false;
+  }
+
+  try {
+    console.log("[PWA] Checking for updates using native API...");
+    const registration = await navigator.serviceWorker.getRegistration();
+
+    if (!registration) {
+      console.log("[PWA] No service worker registration found");
+      return false;
+    }
+
+    // Check if there's already a waiting service worker
+    if (registration.waiting) {
+      console.log("[PWA] Found waiting service worker (native check)");
+      updateAvailable = true;
+      window.dispatchEvent(new CustomEvent("pwa-update-available"));
+      return true;
+    }
+
+    // Force update using native API
+    await registration.update();
+
+    // Check again after update
+    const newRegistration = await navigator.serviceWorker.getRegistration();
+    if (newRegistration && newRegistration.waiting) {
+      console.log("[PWA] Update found after native check");
+      updateAvailable = true;
+      window.dispatchEvent(new CustomEvent("pwa-update-available"));
+      return true;
+    }
+
+    console.log("[PWA] No updates available (native check)");
+    return false;
+  } catch (error) {
+    console.error("[PWA] Error in native update check:", error);
+    return false;
+  }
 };
 
 export const getSWStatus = async (): Promise<string> => {
