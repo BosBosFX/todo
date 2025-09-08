@@ -113,12 +113,25 @@ let backgroundSyncHandler: ((event: MessageEvent) => void) | null = null;
 export const setupBackgroundSync = (): (() => void) => {
   if ("serviceWorker" in navigator && !backgroundSyncHandler) {
     backgroundSyncHandler = (event: MessageEvent) => {
+      // Handle background sync
       if (event.data && event.data.type === "SYNC_TODOS") {
         console.log("[PWA] Background sync triggered");
         // Import sync service dynamically to avoid circular dependencies
         import("./sync").then(({ flushQueue }) => {
           flushQueue();
         });
+      }
+
+      // Handle cache updates
+      if (event.data && event.data.type === "CACHE_UPDATED") {
+        console.log("[PWA] Cache updated, checking for app updates");
+        // Trigger update check
+        updateSW();
+      }
+
+      // Handle service worker errors
+      if (event.data && event.data.type === "SW_ERROR") {
+        console.error("[PWA] Service worker error:", event.data.error);
       }
     };
 
