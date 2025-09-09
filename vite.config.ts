@@ -50,6 +50,32 @@ export default defineConfig({
         navigateFallback: null, // Prevents SW from interfering with DB operations
 
         runtimeCaching: [
+          // 🏷️ CATEGORIES - Cache First (Static Data)
+          {
+            urlPattern: /^http?:\/\/.*\/categories\/.*/i,
+            handler: "CacheFirst",
+            options: {
+              cacheName: "categories-cache",
+              cacheableResponse: {
+                statuses: [0, 200],
+              },
+              expiration: {
+                maxEntries: 10,
+                maxAgeSeconds: 60 * 60 * 24 * 7, // 1 week
+              },
+              plugins: [
+                {
+                  cacheKeyWillBeUsed: async ({ request }: any) => {
+                    const weekNumber = Math.floor(
+                      Date.now() / (7 * 24 * 60 * 60 * 1000)
+                    );
+                    return `${request.url}?v=${weekNumber}`;
+                  },
+                },
+              ],
+            },
+          },
+
           // API calls - Network first with fallback
           {
             urlPattern: /^https:\/\/.*\/api\/.*/i,
